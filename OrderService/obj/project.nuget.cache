@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "Y+bwMLSEtAM=",
+  "success": true,
+  "projectFilePath": "E:\\APIGateaway\\OrderService\\OrderService.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\bogda\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.2\\microsoft.aspnetcore.openapi.9.0.2.nupkg.sha512",
+    "C:\\Users\\bogda\\.nuget\\packages\\microsoft.openapi\\1.6.17\\microsoft.openapi.1.6.17.nupkg.sha512"
+  ],
+  "logs": []
+}
