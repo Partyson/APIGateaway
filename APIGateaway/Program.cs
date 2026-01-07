@@ -1,7 +1,13 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using System.Text.Json;
 using APIGateaway.Models;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry.Metrics;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,7 +22,7 @@ builder.Services.AddStackExchangeRedisCache(opt =>
 
 builder.Services.AddHttpClient("users", client =>
     {
-        client.BaseAddress = new Uri("http://user-service");
+        client.BaseAddress = new Uri("http://user-service:8080");
     })
     .AddStandardResilienceHandler(options =>
     {
@@ -30,15 +36,17 @@ builder.Services.AddHttpClient("users", client =>
 
 builder.Services.AddHttpClient("orders", client =>
     {
-        client.BaseAddress = new Uri("http://order-service");
+        client.BaseAddress = new Uri("http://order-service:8080");
     })
     .AddStandardResilienceHandler();
 
 builder.Services.AddHttpClient("products", client =>
     {
-        client.BaseAddress = new Uri("http://product-service");
+        client.BaseAddress = new Uri("http://product-service:8080");
     })
     .AddStandardResilienceHandler();
+
+const string jwtKey = "super-secret-key-12345123=0457y123-04587y12354";
 
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
@@ -48,8 +56,10 @@ builder.Services.AddAuthentication("Bearer")
         {
             ValidateIssuer = false,
             ValidateAudience = false,
-            ValidateLifetime = false,
-            ValidateIssuerSigningKey = false
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtKey))
         };
     });
 builder.Services.AddAuthorization();
@@ -63,11 +73,49 @@ builder.Services.AddRateLimiter(opt =>
     });
 });
 
+builder.Services.AddOpenTelemetry()
+    .WithMetrics(metrics =>
+    {
+        metrics.AddAspNetCoreInstrumentation();
+        metrics.AddHttpClientInstrumentation();
+        metrics.AddPrometheusExporter();
+    });
+
 var app = builder.Build();
 
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
+app.MapPrometheusScrapingEndpoint();
+
+app.MapPost("/auth/login", ([FromBody] LoginRequest request) =>
+{
+    if (request is null)
+        return Results.BadRequest("Request body is null");
+    if (request.Username != "admin" || request.Password != "password")
+        return Results.Unauthorized();
+
+    var claims = new[]
+    {
+        new Claim(ClaimTypes.Name, request.Username),
+        new Claim(ClaimTypes.Role, "User")
+    };
+
+    var key = new SymmetricSecurityKey(
+        Encoding.UTF8.GetBytes(jwtKey));
+
+    var creds = new SigningCredentials(
+        key, SecurityAlgorithms.HmacSha256);
+
+    var token = new JwtSecurityToken(
+        claims: claims,
+        expires: DateTime.UtcNow.AddMinutes(30),
+        signingCredentials: creds);
+
+    var jwt = new JwtSecurityTokenHandler().WriteToken(token);
+
+    return Results.Ok(new { access_token = jwt });
+}).AllowAnonymous();
 
 app.MapGet("/api/profile/{userId}", async (
         string userId,
@@ -94,9 +142,17 @@ app.MapGet("/api/profile/{userId}", async (
 
         foreach (var o in userOrders)
         {
-            o.Product = await products
-                .GetFromJsonAsync<Product>($"/products/{o.ProductId}");
+            try
+            {
+                o.Product = await products
+                    .GetFromJsonAsync<Product>($"/products/{o.ProductId}");
+            }
+            catch
+            {
+                o.Product = new Product(o.ProductId, "Unknown product", 0);
+            }
         }
+
 
         var result = new { user, orders = userOrders };
 

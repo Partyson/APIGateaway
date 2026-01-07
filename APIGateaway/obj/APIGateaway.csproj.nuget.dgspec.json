@@ -65,6 +65,14 @@
               "target": "Package",
               "version": "[9.10.0, )"
             },
+            "OpenTelemetry.Instrumentation.AspNetCore": {
+              "target": "Package",
+              "version": "[1.13.0, )"
+            },
+            "OpenTelemetry.Instrumentation.Http": {
+              "target": "Package",
+              "version": "[1.13.0, )"
+            },
             "Polly": {
               "target": "Package",
               "version": "[8.6.5, )"
@@ -76,6 +84,10 @@
             "Serilog.Sinks.Console": {
               "target": "Package",
               "version": "[6.1.1, )"
+            },
+            "SharpAbp.Abp.OpenTelemetry.Exporter.Prometheus.AspNetCore": {
+              "target": "Package",
+              "version": "[4.6.5, )"
             },
             "prometheus-net.AspNetCore": {
               "target": "Package",

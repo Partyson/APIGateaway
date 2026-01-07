@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("APIGateaway")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f984fd3ab7d1b07bba13c983c2c4a59be8a0cd05")]
 [assembly: System.Reflection.AssemblyProductAttribute("APIGateaway")]
 [assembly: System.Reflection.AssemblyTitleAttribute("APIGateaway")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
